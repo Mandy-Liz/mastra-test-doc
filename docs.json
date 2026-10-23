@@ -18,20 +18,24 @@
   "navbar": {
     "primary": {
       "label": "Get started",
-      "href": "/quickstart"
+      "href": "introduction"
     }
   },
   "tabs": [
     {
+      "tab": "Home",
+      "href": "/home"
+    },
+    {
       "tab": "Get started",
       "groups": [
         {
-          "group": "Get started",
+          "group": "Introduction",
           "pages": ["introduction", "quickstart"]
         },
         {
-          "group": "Design your docs",
-          "pages": ["components", "customization"]
+          "group": "Reference",
+          "pages": ["glossary"]
         }
       ]
     },
@@ -39,17 +43,14 @@
       "tab": "Guides",
       "groups": [
         {
-          "group": "Work with Thally",
-          "pages": [
-            "guides/create-a-site",
-            "guides/work-with-the-cli",
-            "guides/connect-ai-tools"
-          ]
+          "group": "Build with Mastra",
+          "pages": ["guides/add-tools-to-agent"]
         }
       ]
     },
     {
       "tab": "API Reference",
+      "hidden": true,
       "groups": [
         {
           "group": "Overview",
@@ -61,8 +62,8 @@
       }
     },
     {
-      "tab": "Changelog",
-      "href": "/changelog"
+      "tab": "Troubleshooting",
+      "href": "/troubleshoot"
     }
   ]
 }

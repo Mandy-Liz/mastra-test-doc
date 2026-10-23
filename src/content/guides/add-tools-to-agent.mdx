@@ -1,0 +1,159 @@
+---
+title: Add tools to Agents.
+navTitle: Add tool to Agent.
+description: This guide will help you add a tool to a new or an existing agent.
+---
+
+Tools empower an agent do the work that a language model cannot do by itself. A tool can call an API, query a database, read a file, or run a function in your codebase.
+
+## Prerequisite
+
+<Note>
+    Before you begin, you need:
+
+    - A Mastra project.
+    - @mastra/core and zod.
+    - A configured model provider, such as OpenAI.
+    - An existing agent or a plan to create one.
+
+</Note>
+
+To install the dependencies, run:
+
+```bash
+npm install @mastra/core zod
+```
+
+## Define a weather tool
+
+This example creates a weather lookup tool.
+
+Create `src/mastra/tools/weather-tool.ts:`
+
+```typescript
+import { createTool } from "@mastra/core/tools";
+import { z } from "zod";
+
+export const weatherTool = createTool({
+  id: "weather-tool",
+  description: "Fetches the current weather for a location.",
+
+  inputSchema: z.object({
+    location: z
+      .string()
+      .describe("The city or location to retrieve weather for."),
+  }),
+
+  outputSchema: z.object({
+    location: z.string(),
+    temperatureCelsius: z.number(),
+    conditions: z.string(),
+  }),
+
+  execute: async ({ location }, { abortSignal }) => {
+    const response = await fetch(
+      `https://wttr.in/${encodeURIComponent(location)}?format=j1`,
+      { signal: abortSignal },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Weather request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      location,
+      temperatureCelsius: Number(data.current_condition[0].temp_C),
+      conditions: data.current_condition[0].weatherDesc[0].value,
+    };
+  },
+});
+```
+
+A Mastra tool has five important parts:
+| Part | Purpose |
+|-------|---------|
+| id | Gives the tool a stable, unique identifier.|
+|description | Tells the agent what the tool does and when to use it.|
+| inputSchema | Defines and validates the data the tool accepts.|
+| outputSchema | Defines the structured result the tool returns.|
+| execute | Contains the code that performs the action.|
+
+## Add the tool to an agent
+
+Create or update src/mastra/agents/weather-agent.ts:
+
+```typescript
+import { Agent } from "@mastra/core/agent";
+import { weatherTool } from "../tools/weather-tool.ts";
+
+export const weatherAgent = new Agent({
+  id: "weather-agent",
+  name: "Weather Agent",
+  model: "openai/gpt-6.1-sol",
+
+  instructions: `
+    You provide current weather information.
+
+    Use weatherTool when a user asks for current weather conditions.
+    Do not guess current conditions.
+    If the tool cannot return data, explain that you could not retrieve it.
+    Keep answers concise and include the temperature and conditions.
+  `,
+
+  tools: {
+    weatherTool,
+  },
+});
+```
+
+## Register the agent
+
+Update src/mastra/index.ts:
+
+```typescript
+import { Mastra } from "@mastra/core";
+import { weatherAgent } from "./agents/weather-agent.ts";
+
+export const mastra = new Mastra({
+  agents: {
+    weatherAgent,
+  },
+});
+```
+
+## Test the tool
+
+Start your Mastra server:
+
+```bash
+npx mastra dev
+```
+
+Test the tool
+
+```bash
+npx mastra api tool execute weather-tool '{"location":"Lagos"}'
+```
+
+Test the agent in [Mastra Studio](https://mastra.ai/docs/studio/overview) or from code:
+
+```typescript
+import { mastra } from "./src/mastra/index.ts";
+
+const agent = mastra.getAgentById("weather-agent");
+
+const response = await agent.generate(
+  "What is the weather in Lagos right now?",
+);
+
+console.log(response.text);
+```
+
+When you test the agent, confirm that it:
+
+1. Calls weatherTool.
+2. Uses the tool result in its answer.
+3. Does not invent conditions if the tool fails.
+   Mastra Studio is helps you inspect tool calls, inputs, outputs, and agent responses

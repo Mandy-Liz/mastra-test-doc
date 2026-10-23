@@ -1,47 +1,166 @@
 ---
 title: Quickstart
-description: Guide a new reader through one useful workflow and show them how to verify it.
+description: This documentation page will guide you through how to set up your first Mastra project.
 ---
 
-A strong quickstart produces one meaningful result. Replace the placeholders
-below with the shortest supported path for your product.
+## Prerequisite
 
-## Before you begin
+<Note>
+    To successfully follow along this project, you'll need to have:
 
-List only the requirements needed for this workflow:
+    - Node.js (v22.13.0 or later) installed.
+    - An API key for a supported model provider (for example, OpenAI).
+    - A terminal.
 
-- An account or credential, when required
-- A supported runtime, device, browser, or operating system
-- Permission to create or change the resource used in the example
+</Note>
 
-<Steps>
-  <Step title="Install the required tool">
-    Give readers one recommended installation command.
+## Create with AI
 
-    ```bash
-    npm install your-package
-    ```
-  </Step>
-  <Step title="Add the minimum configuration">
-    Include only the values needed for the first successful run.
+To quickly setup your first project with an AI, copy the prompt below:
 
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Complete the first task">
-    Use a realistic example that produces an observable result.
+<Accordion title="Use this pre-built prompt to build your first project">
+  Build a Mastra + Next.js project. Follow this guide exactly: https://mastra.ai/guides/getting-started/next-js.md
 
-    ```bash
-    your-cli start
-    ```
-  </Step>
-  <Step title="Verify the result">
-    State exactly what the reader should see and how to recover when it does not appear.
-  </Step>
-</Steps>
+Before starting, ask these questions one by one. Wait for answers unless already given:
 
-## Choose the next task
+1. Project name? (default: "my-nextjs-agent")
+2. Provider? (default: "openai", options: "openai", "anthropic", "groq", "google", "cerebras", "mistral")
+3. Already have a Next.js app? (default: "no")
+   Provider rules:
 
-Link to the guide that naturally follows this result. Avoid ending the reader’s
-journey with a generic list of every feature.
+Allowed provider -> use it.
+Any other value -> use "openai".
+If new app: run `npx create-next-app@latest <project-name> --yes --ts --eslint --tailwind --src-dir --app --turbopack --no-react-compiler --no-import-alias`
+
+For the "Initialize Mastra" step, do NOT run the interactive command from the guide. Instead run: `cd <project-name> && npx mastra@latest init --default --llm <provider>`
+
+Then follow every step in the guide. Copy code from the guide exactly. Do not improvise.
+
+</Accordion>
+
+## Run Mastra locally
+
+This example use OpenAI. Ensure to set your API key before running the app:
+
+```bash
+$env:OPENAI_API_KEY="your_api_key"
+```
+
+<Callout icon="key" color="ffffff">
+  Do not commit API keys to your repository. For a persistent local setup, place
+  them in an ignored .env file if the generated project supports one.
+</Callout>
+
+### Create a new Mastra project
+
+<Tabs>
+  <Tab title="npm">```bash npm create mastra@latest ```</Tab>
+  <Tab title="pnpm">```bash pnpm create mastra@latest ```</Tab>
+  <Tab title="yarn">```bash yarn create mastra ```</Tab>
+  <Tab title="bun">```bash bunx create-mastra```</Tab>
+</Tabs>
+
+**Or**
+
+### Create and navigate into project folder
+
+```bash
+npm create mastra@latest my-mastra-app -- --llm openai
+cd my-mastra-app
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Open the mastra studio - a UI to test your agent and inspect its runs:
+
+```plain text
+http://localhost:4111
+```
+
+### Project Structure
+
+A minimal mastra project should look like this:
+
+```
+  src/
+    mastra/
+      agents/
+        agent.ts
+      tools/
+        tool.ts
+      workflows/
+        workflow.ts
+      scorers/
+        scorer.ts
+      skills.ts
+      index.ts
+```
+
+    See the [project structure reference](https://mastra.ai/reference/project-structure) for the default layout and recommended conventions.
+
+## Create your first Agent
+
+Enter the code below into a src/mastra/agents/assistant.ts file:
+
+```typescript
+import { Agent } from "@mastra/core/agent";
+
+export const assistant = new Agent({
+  id: "assistant",
+  name: "Assistant",
+  instructions: `
+    You are a helpful assistant.
+    Give clear, concise answers.
+  `,
+  model: "openai/gpt-5-mini",
+});
+```
+
+An agent needs four main values:
+
+- id: A stable identifier you use in code.
+- name: A readable name for people and tools.
+- instructions: The rules and role that guide the agent.
+- model: The AI model the agent uses.
+
+## Register the agent
+
+Registering the Agent in your mastra instance makes it available throughout your application.
+
+Create or update src/mastra/index.ts:
+
+```typescript
+import { Mastra } from "@mastra/core";
+import { assistant } from "./agents/assistant.ts";
+
+export const mastra = new Mastra({
+  agents: { assistant },
+});
+```
+
+## Call the agent
+
+Use the registered agent from your application code:
+
+```typescript
+import { mastra } from "./src/mastra/index.ts";
+
+const agent = mastra.getAgentById("assistant");
+
+const response = await agent.generate(
+  "Explain what a REST API is in two sentences.",
+);
+
+console.log(response.text);
+```
+
+Use .generate() when you want the complete response. Use .stream() when you want to send text to the user as it arrives. Agent responses can also include tool calls, tool results, execution steps, and token-usage data.
+
+<Note>
+  Where to go from here? Visit [Guides](guides/build-with-mastra) to build more
+  projects.
+</Note>
